@@ -1,45 +1,42 @@
-import axios from 'axios'
 import * as cheerio from 'cheerio'
 import fs from 'fs'
 
-fs.readFile('./sites.txt', 'utf-8', (err: any, data: any) => {
-	if (err) { return console.error(err) }
-	
-	data.split(/\r?\n/).forEach((url:any) => {
+fs.readFile('./sites.txt', 'utf-8', (err, data) => {
+	if (err) {
+		return console.error(err)
+	}
+
+	data.split(/\r?\n/).forEach((url: string) => {
 		if (url != '') {
-			axios
-				.get(`https://${url.replace('https://', '').replace('http://', '')}`)
-				.then(async response => {
-					let srcList: any = []
+			fetch(url)
+				.then(async response => await response.text())
+				.then(async data => {
+					let theme = ''
+					let pluginList: Array<string> = []
 
-					if (response.data.indexOf('e-con-inner') == -1 || response.data.indexOf('container') == -1) {
-						console.log(`[!] ${url}: OFFLINE`)
-						return console.log()
+					const $ = cheerio.load(data)
+
+					if (!$('.elementor-element')) {
+						return console.log(`[!] ${url}: OFFLINE\n`)
 					}
-
 					console.log(`[+] ${url}`)
 
-					const $ = cheerio.load(response.data)
 					$('script').each((index, element) => {
 						let src = $(element).attr('src')?.replace('https://', '').replace('http://', '')
 
-						if (typeof src === 'string') {
-							if (src?.indexOf('/wp-content/themes') != -1)
-								console.log(`[i] THEME: ${src?.split('/')[3]}`)
-							if (src?.indexOf('/wp-content/plugins') != -1) {
-								let theme = src?.split('/')[3]
-								if (srcList.indexOf(theme) == -1) srcList.push(theme)
-							}
+						if (!src) return
+						if (src?.indexOf('/wp-content/themes') != -1) theme = src?.split('/')[3]
+
+						if (src?.indexOf('/wp-content/plugins') != -1) {
+							let plugin = src?.split('/')[3]
+							if (pluginList.indexOf(plugin) == -1) pluginList.push(plugin)
 						}
 					})
 
-					srcList.forEach((theme: any) => console.log(`[i] PLUGIN: ${theme}`))
-					console.log()
+					pluginList.forEach((plugin: string) => console.log(`[i] PLUGIN: ${plugin}`))
+					console.log(`[i] THEME: ${theme}\n`)
 				})
-				.catch(err => {
-					console.log(`[!] DOMÍNIO NÃO ENCONTRADO: ${url}`)
-					console.log()
-				})
+				.catch(err => console.log(`[!] DOMÍNIO NÃO ENCONTRADO: ${url}\n ${err}`))
 		}
 	})
 })

@@ -3,8 +3,10 @@
 	"useTabs": true,
 	"semi": false,
 	"arrowParens": "avoid",
-	"printWidth": 100,
+	"printWidth": 130,
 	"singleQuote": true,
 	"trailingComma": "all",
-	"endOfLine": "auto"
+	"endOfLine": "auto",
+	"singleAttributePerLine": false,
+	"proseWrap": "never"
 }
